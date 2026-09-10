@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CloseTab MVP - Frontend</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>CloseTab MVP</h1>
+        <div id="group-controls"></div>
+      </header>
+
+      <main>
+        <section id="group-panel" class="panel">
+          <h2>Group</h2>
+          <div id="group-info"></div>
+          <button id="close-group-btn">Close Group</button>
+          <button id="reopen-group-btn">Reopen Group</button>
+        </section>
+
+        <section id="members-panel" class="panel">
+          <h2>Members</h2>
+          <div id="members-list"></div>
+          <input id="member-name" placeholder="New member name" />
+          <button id="add-member-btn">Add Member</button>
+        </section>
+
+        <section id="expense-panel" class="panel">
+          <h2>Expenses</h2>
+          <form id="expense-form">
+            <input id="expense-desc" placeholder="Description" required />
+            <input id="expense-amt" type="number" step="0.01" placeholder="Amount" required />
+            <input id="expense-date" type="date" />
+            <div>
+              <label><input type="radio" name="mode" value="everyone" checked /> Everyone</label>
+              <label><input type="radio" name="mode" value="selected" /> Selected Members</label>
+            </div>
+            <div id="participant-list"></div>
+            <button type="submit">Add Expense</button>
+          </form>
+          <div id="expenses-list"></div>
+        </section>
+
+        <section id="settlement-panel" class="panel">
+          <h2>Settlements</h2>
+          <div id="balances"></div>
+          <h3>Record Settlement</h3>
+          <select id="settle-from"></select>
+          <select id="settle-to"></select>
+          <input id="settle-amt" type="number" step="0.01" placeholder="Amount" />
+          <button id="record-settlement-btn">Record</button>
+          <div id="settlements-list"></div>
+        </section>
+      </main>
+
+      <footer>
+        <small>Mocked backend. All changes stored in memory.</small>
+      </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
