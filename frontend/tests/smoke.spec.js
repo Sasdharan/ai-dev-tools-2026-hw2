@@ -7,17 +7,25 @@ test('smoke: add expense, close group, suggested settlement', async ({ page }) =
   await expect(page.locator('text=CloseTab MVP')).toBeVisible();
 
   // Add a unique member so the test also works against a reused mock server.
-  const memberName = `Charlie-${Date.now()}`;
+  const memberName = `Charlie-${Date.now()}-${'x'.repeat(40)}`;
   await page.fill('#member-name', memberName);
   await page.click('#add-member-btn');
   await expect(page.locator('.member', { hasText: memberName })).toBeVisible();
+  await expect(page.locator('#expenses-heading')).toHaveText('▤Expense Audit');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await expect(page.locator('input[name=mode][value=everyone]')).toBeChecked();
+  await expect(page.locator('#participant-list input[type=checkbox]:checked')).toHaveCount(
+    await page.locator('#participant-list input[type=checkbox]').count()
+  );
 
   if (await page.locator('#reopen-group-btn').isEnabled()) {
     await page.click('#reopen-group-btn');
   }
 
-  // Add expense: Rent $3000 paid by Alice for Alice and Bob
-  await page.fill('#expense-desc', 'Rent');
+  // Add a unique expense so the test also works against a reused database.
+  const expenseDescription = `Rent-${Date.now()}`;
+  await page.fill('#expense-desc', expenseDescription);
   await page.fill('#expense-amt', '3000');
   // pick today date
   const today = new Date().toISOString().slice(0,10);
@@ -34,14 +42,16 @@ test('smoke: add expense, close group, suggested settlement', async ({ page }) =
   await page.click('button:has-text("Add Expense")');
 
   // expect expense to appear
-  await expect(page.locator('.expense', { hasText: 'Rent' })).toBeVisible();
+  await expect(page.locator('.expense', { hasText: expenseDescription })).toBeVisible();
 
   // balances should show Alice positive, Bob negative
   await expect(page.locator('#balances', { hasText: 'Alice' })).toBeVisible();
   await expect(page.locator('#balances', { hasText: 'Bob' })).toBeVisible();
 
   // suggested settlement should show Bob → Alice: $1500.00
-  await expect(page.locator('#balances')).toContainText('Bob → Alice');
+  await expect(page.locator('#suggested-settlements')).toContainText('Bob → Alice');
+  expect(await page.locator('#suggested-settlements').evaluate(el => getComputedStyle(el).overflowY)).toBe('scroll');
+  expect(await page.locator('#suggested-settlements').evaluate(el => el.clientHeight)).toBeGreaterThan(0);
 
   // ensure record settlement disabled while open
   await expect(page.locator('#record-settlement-btn')).toBeDisabled();

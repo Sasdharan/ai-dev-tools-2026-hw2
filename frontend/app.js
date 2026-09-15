@@ -35,9 +35,10 @@ function renderMembers(members){
 
 function renderParticipants(members){
   const list = qs('#participant-list'); list.innerHTML='';
+  const everyone = qs('input[name=mode]:checked').value === 'everyone';
   members.forEach(m=>{
     const lbl = document.createElement('label');
-    lbl.innerHTML = `<input type="checkbox" value="${m.id}" /> ${m.name}`;
+    lbl.innerHTML = `<input type="checkbox" value="${m.id}"${everyone ? ' checked' : ''} /> ${m.name}`;
     list.appendChild(lbl);
   });
 }
@@ -65,12 +66,15 @@ function renderBalances(balances, members){
     el.appendChild(row);
   });
 
-  // show simple settlement suggestions (greedy match)
-  const sug = document.createElement('div'); sug.style.marginTop='8px';
+  renderSuggestedSettlements(balances, members);
+}
+
+function renderSuggestedSettlements(balances, members){
+  const el = qs('#suggested-settlements'); el.innerHTML='';
+  const sug = document.createElement('div');
   const creditors = members.map(m=>({id:m.id,name:m.name,bal:balances[m.id]||0})).filter(x=>x.bal>0).sort((a,b)=>b.bal-a.bal);
   const debtors = members.map(m=>({id:m.id,name:m.name,bal:balances[m.id]||0})).filter(x=>x.bal<0).sort((a,b)=>a.bal-b.bal);
   if(creditors.length || debtors.length){
-    const title = document.createElement('h4'); title.textContent='Suggested Settlements'; sug.appendChild(title);
     let i=0,j=0;
     while(i<debtors.length && j<creditors.length){
       const d = debtors[i]; const c = creditors[j];
@@ -83,6 +87,7 @@ function renderBalances(balances, members){
     }
     el.appendChild(sug);
   }
+  qs('#suggested-settlements-heading').hidden = !(creditors.length || debtors.length);
 }
 
 function renderSettlements(settlements, members){

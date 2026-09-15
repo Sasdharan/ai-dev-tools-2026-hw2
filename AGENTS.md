@@ -56,6 +56,13 @@ async def get_user(user_id: int, current_user: User = Depends(get_current_user))
     return current_user
 ```
 
+## UI Standards & Conventions
+
+- UI should be consistent.
+- No alignment
+(vertical or horizontal) issues or container overflow that cause the layout shifts or alignment
+- Anything that can grow based on user input/action should be on fixed container with scroll bar as required.
+
 ## Agent Boundaries & Constraints
 
 - **Allowed:** Adding new FastAPI endpoints, writing `pytest` test cases, updating Node.js components, and adding dependencies via `uv add <package>`.

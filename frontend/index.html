@@ -13,19 +13,16 @@
     <div id="app">
       <header>
         <h1>CloseTab MVP</h1>
-        <div id="group-controls"></div>
-      </header>
-
-      <main>
-        <section id="group-panel" class="panel" aria-labelledby="group-heading">
-          <h2 id="group-heading"><span class="section-icon" aria-hidden="true">◈</span>Group</h2>
+        <div id="group-controls" class="group-actions">
           <div id="group-info" aria-live="polite"></div>
           <div class="controls">
             <button id="close-group-btn" aria-label="Close group"><span aria-hidden="true">▣</span> Close Group</button>
             <button id="reopen-group-btn" aria-label="Reopen group"><span aria-hidden="true">↻</span> Reopen Group</button>
           </div>
-        </section>
+        </div>
+      </header>
 
+      <main>
         <section id="members-panel" class="panel" aria-labelledby="members-heading">
           <h2 id="members-heading"><span class="section-icon" aria-hidden="true">♧</span>Members</h2>
           <div id="members-list" role="list"></div>
@@ -37,7 +34,7 @@
         </section>
 
         <section id="expense-panel" class="panel" aria-labelledby="expenses-heading">
-          <h2 id="expenses-heading"><span class="section-icon" aria-hidden="true">▤</span>Expenses</h2>
+          <h2 id="expenses-heading"><span class="section-icon" aria-hidden="true">▤</span>Expense Audit</h2>
           <form id="expense-form">
             <label for="expense-desc" class="sr-only">Description</label>
             <input id="expense-desc" placeholder="Description" required aria-label="Expense description" />
@@ -47,10 +44,10 @@
             <input id="expense-date" type="date" aria-label="Expense date" />
             <div id="expense-payer-control">
               <label for="expense-payer">Payer:</label>
-              <select id="expense-payer" aria-label="Expense payer"></select>
+                <select id="expense-payer" aria-label="Expense payer"></select>
             </div>
             <fieldset>
-              <legend class="sr-only">Split mode</legend>
+              <legend>Mode</legend>
               <label><input type="radio" name="mode" value="everyone" checked /> Everyone</label>
               <label><input type="radio" name="mode" value="selected" /> Selected Members</label>
             </fieldset>
@@ -63,14 +60,18 @@
         <section id="settlement-panel" class="panel" aria-labelledby="settlements-heading">
           <h2 id="settlements-heading"><span class="section-icon" aria-hidden="true">⇄</span>Settlements</h2>
           <div id="balances" aria-live="polite"></div>
+          <h3 id="suggested-settlements-heading">Suggested Settlements</h3>
+          <div id="suggested-settlements" aria-live="polite"></div>
           <h3>Record Settlement</h3>
-          <label class="sr-only" for="settle-from">From</label>
-          <select id="settle-from" aria-label="Settlement from"></select>
-          <label class="sr-only" for="settle-to">To</label>
-          <select id="settle-to" aria-label="Settlement to"></select>
-          <label class="sr-only" for="settle-amt">Amount</label>
-          <input id="settle-amt" type="number" step="0.01" placeholder="Amount" aria-label="Settlement amount" />
-          <button id="record-settlement-btn" aria-label="Record settlement"><span aria-hidden="true">✓</span> Record</button>
+          <div class="settlement-form">
+            <label class="sr-only" for="settle-from">From</label>
+            <select id="settle-from" aria-label="Settlement from"></select>
+            <label class="sr-only" for="settle-to">To</label>
+            <select id="settle-to" aria-label="Settlement to"></select>
+            <label class="sr-only" for="settle-amt">Amount</label>
+            <input id="settle-amt" type="number" step="0.01" placeholder="Amount" aria-label="Settlement amount" />
+            <button id="record-settlement-btn" aria-label="Record settlement"><span aria-hidden="true">✓</span> Record</button>
+          </div>
           <div id="settlements-list" aria-live="polite"></div>
         </section>
       </main>

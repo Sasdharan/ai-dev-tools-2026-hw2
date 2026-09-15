@@ -1,4 +1,4 @@
-Frontend mock app for CloseTab MVP.
+# Frontend mock app for CloseTab MVP
 
 Open `frontend/index.html` in a browser (or serve the folder with a static server) to run the UI.
 
