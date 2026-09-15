@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>CloseTab MVP - Frontend</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
@@ -28,9 +29,11 @@
         <section id="members-panel" class="panel" aria-labelledby="members-heading">
           <h2 id="members-heading"><span class="section-icon" aria-hidden="true">♧</span>Members</h2>
           <div id="members-list" role="list"></div>
-          <label for="member-name" class="sr-only">New member name</label>
-          <input id="member-name" placeholder="New member name" aria-label="New member name" />
-          <button id="add-member-btn" aria-label="Add member"><span aria-hidden="true">+</span> Add Member</button>
+          <div class="member-controls">
+            <label for="member-name" class="sr-only">New member name</label>
+            <input id="member-name" placeholder="New member name" aria-label="New member name" />
+            <button id="add-member-btn" aria-label="Add member"><span aria-hidden="true">+</span> Add Member</button>
+          </div>
         </section>
 
         <section id="expense-panel" class="panel" aria-labelledby="expenses-heading">
@@ -42,7 +45,7 @@
             <input id="expense-amt" type="number" step="0.01" placeholder="Amount" required aria-label="Expense amount" />
             <label for="expense-date" class="sr-only">Date</label>
             <input id="expense-date" type="date" aria-label="Expense date" />
-            <div>
+            <div id="expense-payer-control">
               <label for="expense-payer">Payer:</label>
               <select id="expense-payer" aria-label="Expense payer"></select>
             </div>
@@ -52,7 +55,7 @@
               <label><input type="radio" name="mode" value="selected" /> Selected Members</label>
             </fieldset>
             <div id="participant-list" role="group" aria-label="Participants"></div>
-            <button type="submit" aria-label="Add expense"><span aria-hidden="true">+</span> Add Expense</button>
+            <button id="expense-submit" type="submit" aria-label="Add expense"><span aria-hidden="true">+</span> Add Expense</button>
           </form>
           <div id="expenses-list" aria-live="polite"></div>
         </section>
@@ -73,7 +76,7 @@
       </main>
 
       <footer>
-        <small>Mocked backend. All changes stored in memory.</small>
+        <small>Data resets when the server restarts.</small>
       </footer>
     </div>
 

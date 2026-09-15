@@ -1,15 +1,20 @@
 const { test, expect } = require('@playwright/test');
 
 test('smoke: add expense, close group, suggested settlement', async ({ page }) => {
-  await page.goto('http://127.0.0.1:8080');
+  await page.goto('http://127.0.0.1:8000');
 
   // ensure page loaded
   await expect(page.locator('text=CloseTab MVP')).toBeVisible();
 
-  // add a new member Charlie to have 3 members
-  await page.fill('#member-name', 'Charlie');
+  // Add a unique member so the test also works against a reused mock server.
+  const memberName = `Charlie-${Date.now()}`;
+  await page.fill('#member-name', memberName);
   await page.click('#add-member-btn');
-  await expect(page.locator('.member', { hasText: 'Charlie' })).toBeVisible();
+  await expect(page.locator('.member', { hasText: memberName })).toBeVisible();
+
+  if (await page.locator('#reopen-group-btn').isEnabled()) {
+    await page.click('#reopen-group-btn');
+  }
 
   // Add expense: Rent $3000 paid by Alice for Alice and Bob
   await page.fill('#expense-desc', 'Rent');
