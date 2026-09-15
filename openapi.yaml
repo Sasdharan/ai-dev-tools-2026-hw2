@@ -1,0 +1,371 @@
+openapi: 3.0.3
+info:
+  title: CloseTab MVP API
+  version: 1.0.0
+  description: >-
+    API contract inferred from the CloseTab MVP frontend. The current frontend
+    uses an in-memory mock implementation, but these operations describe the
+    backend interface required by the UI.
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Group
+  - name: Members
+  - name: Expenses
+  - name: Settlements
+  - name: Balances
+
+paths:
+  /state:
+    get:
+      tags: [Group]
+      summary: Get the current group state
+      operationId: fetchState
+      responses:
+        '200':
+          description: Current group, members, expenses, and settlements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppState'
+
+  /members:
+    post:
+      tags: [Members]
+      summary: Add a member
+      operationId: addMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: The newly created member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /expenses:
+    post:
+      tags: [Expenses]
+      summary: Add an expense
+      operationId: addExpense
+      description: >-
+        Creates an equal-split expense for the supplied participants. The
+        frontend prevents creation when the participant list is empty, rejects
+        future dates, and disables expense creation after the group is closed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddExpenseRequest'
+      responses:
+        '201':
+          description: The newly created expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: The group is closed or a participant is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /settlements:
+    post:
+      tags: [Settlements]
+      summary: Record a settlement
+      operationId: recordSettlement
+      description: >-
+        Records a payment from one member to another. Settlements are only
+        available after the group has been closed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordSettlementRequest'
+      responses:
+        '201':
+          description: The newly recorded settlement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settlement'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: The group is not closed or a member is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /group/close:
+    post:
+      tags: [Group]
+      summary: Close the group
+      operationId: closeGroup
+      responses:
+        '200':
+          description: The group after it has been closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '409':
+          description: The group is already closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /group/reopen:
+    post:
+      tags: [Group]
+      summary: Reopen the group
+      operationId: reopenGroup
+      responses:
+        '200':
+          description: The group after it has been reopened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '409':
+          description: The group is already open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /balances:
+    get:
+      tags: [Balances]
+      summary: Compute member balances
+      operationId: computeBalances
+      description: >-
+        Returns a balance for every member. Positive values represent credit
+        to receive; negative values represent money owed.
+      responses:
+        '200':
+          description: Balances keyed by member ID
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: number
+                  format: double
+                example:
+                  m1: 25.5
+                  m2: -25.5
+
+components:
+  responses:
+    BadRequest:
+      description: The request is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    AppState:
+      type: object
+      required: [group, members, expenses, settlements]
+      properties:
+        group:
+          $ref: '#/components/schemas/Group'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+        expenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expense'
+        settlements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Settlement'
+
+    Group:
+      type: object
+      required: [id, name, closed]
+      properties:
+        id:
+          type: string
+          example: g1
+        name:
+          type: string
+          minLength: 1
+          example: Trip
+        closed:
+          type: boolean
+          example: false
+
+    Member:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: m1
+        name:
+          type: string
+          minLength: 1
+          example: Alice
+
+    AddMemberRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Charlie
+
+    Expense:
+      type: object
+      required: [id, desc, amount, date, participants, payer, locked]
+      properties:
+        id:
+          type: string
+          example: e1
+        desc:
+          type: string
+          minLength: 1
+          example: Dinner
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 60.0
+        date:
+          type: string
+          format: date
+          description: Expense date. Future dates are not allowed.
+          example: '2026-09-15'
+        participants:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+          example: [m1, m2]
+        payer:
+          type: string
+          description: ID of the member who paid the full expense.
+          example: m1
+        locked:
+          type: boolean
+          description: Locked expenses cannot be edited or deleted after settlement impact.
+          example: false
+
+    AddExpenseRequest:
+      type: object
+      required: [desc, amount, date, participants, payer]
+      additionalProperties: false
+      properties:
+        desc:
+          type: string
+          minLength: 1
+          example: Dinner
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 60.0
+        date:
+          type: string
+          format: date
+          description: Expense date. Must not be in the future.
+          example: '2026-09-15'
+        participants:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+          example: [m1, m2]
+        payer:
+          type: string
+          description: ID of the member who paid the expense.
+          example: m1
+
+    Settlement:
+      type: object
+      required: [id, from, to, amount, date]
+      properties:
+        id:
+          type: string
+          example: s1
+        from:
+          type: string
+          description: ID of the member making the payment.
+          example: m2
+        to:
+          type: string
+          description: ID of the member receiving the payment.
+          example: m1
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 30.0
+        date:
+          type: string
+          format: date
+          example: '2026-09-15'
+        notes:
+          type: string
+          nullable: true
+          description: Optional settlement notes.
+          example: Cash payment
+
+    RecordSettlementRequest:
+      type: object
+      required: [from, to, amount, date]
+      additionalProperties: false
+      properties:
+        from:
+          type: string
+          example: m2
+        to:
+          type: string
+          example: m1
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 30.0
+        date:
+          type: string
+          format: date
+          example: '2026-09-15'
+        notes:
+          type: string
+          nullable: true
+          example: Cash payment
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          example: Group must be closed before recording settlements.

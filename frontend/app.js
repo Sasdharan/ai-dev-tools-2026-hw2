@@ -7,6 +7,7 @@ async function refresh(){
   renderGroup(state.group);
   renderMembers(state.members);
   renderParticipants(state.members);
+  renderPayerOptions(state.members);
   renderExpenses(state.expenses);
   renderBalances(await api.computeBalances(), state.members);
   renderSettlements(state.settlements, state.members);
@@ -16,6 +17,8 @@ function renderGroup(group){
   qs('#group-info').textContent = `${group.name} (${group.closed? 'Closed':'Open'})`;
   qs('#close-group-btn').disabled = group.closed;
   qs('#reopen-group-btn').disabled = !group.closed;
+  // enable/disable settlement UI depending on closed state
+  qs('#record-settlement-btn').disabled = !group.closed;
 }
 
 function renderMembers(members){
@@ -33,11 +36,15 @@ function renderMembers(members){
 function renderParticipants(members){
   const list = qs('#participant-list'); list.innerHTML='';
   members.forEach(m=>{
-    const id = `p_${m.id}`;
     const lbl = document.createElement('label');
-    lbl.innerHTML = `<input type="checkbox" value="${m.id}" checked /> ${m.name}`;
+    lbl.innerHTML = `<input type="checkbox" value="${m.id}" /> ${m.name}`;
     list.appendChild(lbl);
   });
+}
+
+function renderPayerOptions(members){
+  const sel = qs('#expense-payer'); sel.innerHTML='';
+  members.forEach(m=> sel.appendChild(new Option(m.name,m.id)));
 }
 
 function renderExpenses(expenses){
@@ -51,11 +58,31 @@ function renderExpenses(expenses){
 
 function renderBalances(balances, members){
   const el = qs('#balances'); el.innerHTML='';
+  // show numeric balances
   members.forEach(m=>{
     const v = balances[m.id]||0; const row = document.createElement('div');
     row.textContent = `${m.name}: ${v>=0? '$'+v.toFixed(2) : '-$'+Math.abs(v).toFixed(2)}`;
     el.appendChild(row);
   });
+
+  // show simple settlement suggestions (greedy match)
+  const sug = document.createElement('div'); sug.style.marginTop='8px';
+  const creditors = members.map(m=>({id:m.id,name:m.name,bal:balances[m.id]||0})).filter(x=>x.bal>0).sort((a,b)=>b.bal-a.bal);
+  const debtors = members.map(m=>({id:m.id,name:m.name,bal:balances[m.id]||0})).filter(x=>x.bal<0).sort((a,b)=>a.bal-b.bal);
+  if(creditors.length || debtors.length){
+    const title = document.createElement('h4'); title.textContent='Suggested Settlements'; sug.appendChild(title);
+    let i=0,j=0;
+    while(i<debtors.length && j<creditors.length){
+      const d = debtors[i]; const c = creditors[j];
+      const take = Math.min(-d.bal, c.bal);
+      const line = document.createElement('div');
+      line.textContent = `${d.name} → ${c.name}: $${take.toFixed(2)}`;
+      sug.appendChild(line);
+      d.bal += take; c.bal -= take;
+      if(Math.abs(d.bal) < 0.005) i++; if(c.bal < 0.005) j++;
+    }
+    el.appendChild(sug);
+  }
 }
 
 function renderSettlements(settlements, members){
@@ -80,13 +107,16 @@ qs('#expense-form').addEventListener('submit', async e=>{
   const mode = document.querySelector('input[name=mode]:checked').value;
   const checked = Array.from(qs('#participant-list').querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
   const participants = mode==='everyone' ? (await api.fetchState()).members.map(m=>m.id) : checked;
-  if(participants.length===0) { alert('Select participants'); return; }
-  await api.addExpense({desc, amount, date, participants});
+  const payer = qs('#expense-payer').value || participants[0];
+  if(!participants.length) { alert('Select participants'); return; }
+  await api.addExpense({desc, amount, date, participants, payer});
   qs('#expense-desc').value=''; qs('#expense-amt').value=''; await refresh();
 });
 
 qs('#record-settlement-btn').addEventListener('click', async ()=>{
   const from = qs('#settle-from').value; const to = qs('#settle-to').value; const amount = qs('#settle-amt').value;
+  const state = await api.fetchState();
+  if(!state.group.closed){ alert('Group must be closed to record settlements'); return; }
   if(!from || !to || !amount) { alert('Select from/to and amount'); return; }
   await api.recordSettlement({from,to,amount,date:new Date().toISOString().slice(0,10)});
   qs('#settle-amt').value=''; await refresh();
@@ -96,3 +126,17 @@ qs('#close-group-btn').addEventListener('click', async ()=>{ await api.closeGrou
 qs('#reopen-group-btn').addEventListener('click', async ()=>{ await api.reopenGroup(); await refresh(); });
 
 window.addEventListener('load', ()=>{ refresh(); });
+
+// Prevent future dates and manage mode switching default checks
+const dateInput = qs('#expense-date');
+dateInput.max = new Date().toISOString().slice(0,10);
+
+document.querySelectorAll('input[name=mode]').forEach(r=> r.addEventListener('change', e=>{
+  const mode = e.target.value;
+  const checks = qs('#participant-list').querySelectorAll('input[type=checkbox]');
+  if(mode === 'everyone'){
+    checks.forEach(c=>c.checked = true);
+  } else {
+    checks.forEach(c=>c.checked = false);
+  }
+}));

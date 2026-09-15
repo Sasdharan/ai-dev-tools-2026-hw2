@@ -21,7 +21,7 @@ export async function addMember(name){
 }
 
 export async function addExpense({desc, amount, date, participants}){
-  const e = { id: uid('e'), desc, amount: Number(amount), date, participants, locked:false };
+  const e = { id: uid('e'), desc, amount: Number(amount), date, participants, payer: participants[0], locked:false };
   state.expenses.push(e);
   return e;
 }
@@ -37,23 +37,23 @@ export async function closeGroup(){ state.group.closed = true; return state.grou
 export async function reopenGroup(){ state.group.closed = false; return state.group; }
 
 export async function computeBalances(){
-  // simple balance computation: for each expense, split equally among participants
+  // compute balances: positive = credit (should receive), negative = owes
   const balances = {};
   state.members.forEach(m=>balances[m.id]=0);
   state.expenses.forEach(e=>{
-    const share = e.amount / e.participants.length;
-    e.participants.forEach(pid=>{
-      if(pid===e.payer) return; // payer field optional
-      balances[pid] += share;
-    });
-    // assume first participant paid if no payer
     const payer = e.payer || e.participants[0];
-    balances[payer] -= e.amount - (e.participants.includes(payer)? (e.amount / e.participants.length):0);
+    const share = e.amount / e.participants.length;
+    // each participant owes their share
+    e.participants.forEach(pid=>{
+      balances[pid] -= share;
+    });
+    // payer paid full amount, so credit payer
+    balances[payer] += e.amount;
   });
-  // apply settlements
+  // apply settlements: from pays amount to to
   state.settlements.forEach(s=>{
-    balances[s.from] += s.amount;
-    balances[s.to] -= s.amount;
+    balances[s.from] += s.amount * 1; // payer gets credit reduction
+    balances[s.to] -= s.amount * 1;
   });
   return balances;
 }
