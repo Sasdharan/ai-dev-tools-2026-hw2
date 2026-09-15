@@ -2,9 +2,10 @@ from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import inspect
 
 from app.main import app
-from app.database import reset_database
+from app.database import Base, database_engine, reset_database
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +37,27 @@ def test_get_state_returns_seeded_group(client):
         ],
         "expenses": [],
         "settlements": [],
+    }
+
+
+def test_database_schema_is_persistent_sqlalchemy_schema():
+    tables = set(inspect(database_engine).get_table_names())
+
+    assert set(Base.metadata.tables) <= tables
+
+
+def test_member_persists_across_client_instances(client):
+    response = client.post("/members", json={"name": "Charlie"})
+    assert response.status_code == 201
+
+    second_client = TestClient(app)
+    state = second_client.get("/state")
+
+    assert state.status_code == 200
+    assert {member["name"] for member in state.json()["members"]} == {
+        "Alice",
+        "Bob",
+        "Charlie",
     }
 
 

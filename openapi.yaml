@@ -3,9 +3,7 @@ info:
   title: CloseTab MVP API
   version: 1.0.0
   description: >-
-    API contract inferred from the CloseTab MVP frontend. The current frontend
-    uses an in-memory mock implementation, but these operations describe the
-    backend interface required by the UI.
+    API contract for the CloseTab MVP frontend and its SQLAlchemy-backed API.
 servers:
   - url: http://localhost:8000
     description: Local development server
